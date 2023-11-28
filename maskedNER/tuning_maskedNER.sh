@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-# -*- coding: utf-8 -*-
 DS=${1}
 REP=${2}
 LR=${3}
@@ -8,6 +6,7 @@ MASK_ID=${5}
 WHICH_BERT=${6}
 FILE=${7}
 
+
 BASE=/home/b317l704
 REPO_PATH=${BASE}/sentence_classifer_git
 export PYTHONPATH="$PYTHONPATH:$REPO_PATH"
@@ -15,6 +14,7 @@ export PYTHONPATH="$PYTHONPATH:$REPO_PATH"
 DATA_DIR=${REPO_PATH}/datasets/${DS}
 BERT_DIR=${REPO_PATH}/${WHICH_BERT}
 OUTPUT_BASE=${REPO_PATH}/outputs
+
 
 BATCH=4
 GRAD_ACC=4

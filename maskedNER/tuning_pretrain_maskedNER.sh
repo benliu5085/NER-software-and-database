@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-# -*- coding: utf-8 -*-
 DS=$1
 REP=${2}
 LR=${3}
@@ -63,7 +61,7 @@ CUDA_VISIBLE_DEVICES=0 python3 ${REPO_PATH}/maskedNER/mask_trainer.py \
 --lr_scheduler ${LR_SCHEDULER} \
 --classifier_intermediate_hidden_size ${INTER_HIDDEN} \
 --lr_mini ${LR_MINI} \
---pretrained_checkpoint ${MODEL_CKPT} \
 --workers ${WORKERS} \
 --mask_ID ${MASK_ID} \
---seed ${SEED}
+--seed ${SEED} \
+--pretrained_checkpoint ${MODEL_CKPT}
