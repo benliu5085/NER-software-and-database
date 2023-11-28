@@ -17,11 +17,41 @@ from torch.utils.data import DataLoader
 from transformers import AdamW, get_linear_schedule_with_warmup, get_polynomial_decay_schedule_with_warmup
 from torch.optim import SGD
 
-from metrics.query_span_f1 import QuerySpanF1
 from unmaskedNER.mrc_ner_dataset import MRCNERDataset, collate_to_max_length
 from unmaskedNER.bert_query_ner import BertQueryNER, BertQueryNerConfig
 from utils.get_parser import get_parser
 from utils.random_seed import set_random_seed
+
+from pytorch_lightning.metrics.metric import TensorMetric
+def query_span_f1(start_preds, end_preds, match_logits, start_label_mask, end_label_mask, match_labels, flat=False):
+    start_label_mask = start_label_mask.bool()
+    end_label_mask = end_label_mask.bool()
+    match_labels = match_labels.bool()
+    bsz, seq_len = start_label_mask.size()
+    match_preds = match_logits > 0
+    start_preds = start_preds.bool()
+    end_preds = end_preds.bool()
+    match_preds = (match_preds
+                   & start_preds.unsqueeze(-1).expand(-1, -1, seq_len)
+                   & end_preds.unsqueeze(1).expand(-1, seq_len, -1))
+    match_label_mask = (start_label_mask.unsqueeze(-1).expand(-1, -1, seq_len)
+                        & end_label_mask.unsqueeze(1).expand(-1, seq_len, -1))
+    match_label_mask = torch.triu(match_label_mask, 0)  # start should be less or equal to end
+    match_preds = match_label_mask & match_preds
+    tp = (match_labels & match_preds).long().sum()
+    fp = (~match_labels & match_preds).long().sum()
+    fn = (match_labels & ~match_preds).long().sum()
+    return torch.stack([tp, fp, fn])
+
+class QuerySpanF1(TensorMetric):
+    def __init__(self, reduce_group=None, reduce_op=None, flat=False):
+        super(QuerySpanF1, self).__init__(name="query_span_f1",
+                                          reduce_group=reduce_group,
+                                          reduce_op=reduce_op)
+        self.flat = flat
+    def forward(self, start_preds, end_preds, match_logits, start_label_mask, end_label_mask, match_labels):
+        return query_span_f1(start_preds, end_preds, match_logits, start_label_mask, end_label_mask, match_labels,
+                             flat=self.flat)
 
 class BertLabeling(pl.LightningModule):
     def __init__( self, args ):
